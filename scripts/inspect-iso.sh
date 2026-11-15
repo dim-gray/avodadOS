@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
-# Prints the layout of an ISO's \reactos folder and any Run/RunOnce registry hooks, for debugging.
+# Prints what is in an ISO's \reactos folder, the stock unattend.inf, and registry hooks, for debugging.
 set -euo pipefail
 ISO=$1
-echo "== top level"
-xorriso -indev "$ISO" -find / -maxdepth 1 2>/dev/null | head -n 40
+tmp=$(mktemp -d)
 echo "== /reactos"
 xorriso -indev "$ISO" -find /reactos -maxdepth 1 2>/dev/null | head -n 60
-tmp=$(mktemp -d)
-for f in hivesft.inf hivedef.inf hivesys.inf; do
-    if xorriso -osirrox on -indev "$ISO" -extract "/reactos/$f" "$tmp/$f" >/dev/null 2>&1; then
-        echo "== $f: $(wc -l < "$tmp/$f") lines; lines mentioning Run or Winlogon"
-        grep -n -i -E 'CurrentVersion\\Run|Winlogon|Shell' "$tmp/$f" | head -n 15 || true
-    else
-        echo "== $f: not found as a plain file"
-    fi
+echo "== /reactos/system32"
+xorriso -indev "$ISO" -find /reactos/system32 -maxdepth 1 2>/dev/null | head -n 30
+for f in unattend.inf registry.inf txtsetup.sif; do
+    xorriso -osirrox on -indev "$ISO" -extract "/reactos/$f" "$tmp/$f" >/dev/null 2>&1 || { echo "== $f: missing"; continue; }
+    echo "== $f: $(wc -l < "$tmp/$f") lines"
 done
+echo "== full stock unattend.inf"
+cat "$tmp/unattend.inf"
+echo "== registry.inf: Run / RunOnce / Winlogon / Shell lines"
+grep -n -i -E 'CurrentVersion\\Run|Winlogon|"Shell"|\[AddReg|\[Version' "$tmp/registry.inf" | head -n 40 || true
+echo "== registry.inf: first 25 lines"
+head -n 25 "$tmp/registry.inf"

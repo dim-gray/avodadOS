@@ -1,0 +1,26 @@
+name: inspect-reactos
+
+on:
+  push:
+    paths:
+      - scripts/inspect-iso.sh
+      - .github/workflows/inspect.yml
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y xorriso unzip
+      - uses: actions/cache@v4
+        with:
+          path: cache
+          key: sources-${{ hashFiles('kit/sources.env', 'scripts/fetch.sh') }}-
+      - name: Download ReactOS only
+        run: |
+          # fetch.sh downloads the apps too; the inspection only needs the ISO, so stop after the ReactOS step.
+          sed -n '1,/^# --- bundled apps ---/p' scripts/fetch.sh | sed '$d' > /tmp/fetch-reactos.sh
+          cp /tmp/fetch-reactos.sh scripts/.fetch-reactos.sh
+          bash scripts/.fetch-reactos.sh
+      - run: ./scripts/inspect-iso.sh cache/reactos/*.iso
