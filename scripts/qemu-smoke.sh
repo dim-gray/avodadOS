@@ -39,12 +39,17 @@ shot() { # name
 alive=0
 for i in $(seq 1 $((MIN * 2))); do
     sleep 30
+    # In install mode, press Enter now and then for the first 25 minutes to accept the installer's defaults
+    # (partition list, format, folder, boot loader). Extra presses on a finished screen are harmless.
+    if [ "$MODE" = "install" ] && [ "$i" -le 50 ]; then
+        echo "sendkey ret" | socat - "UNIX-CONNECT:$MON" >/dev/null || true
+    fi
     name=$(printf 't%04ds' $((i * 30)))
     shot "$name"
     sd=$(convert "$OUT/$name.png" -format '%[fx:standard_deviation]' info:)
     echo "$name: contrast $sd"
     # Print what is on screen as text (OCR), but only when the picture changed, so CI logs show progress.
-    sum=$(md5sum < "$OUT/$name.png" | cut -d' ' -f1)
+    sum=$(convert "$OUT/$name.png" rgb:- | md5sum | cut -d' ' -f1)
     if [ "$sum" != "${last_sum:-}" ] && command -v tesseract >/dev/null 2>&1; then
         echo "--- screen text at $name"
         convert "$OUT/$name.png" -resize 200% -colorspace Gray "$OUT/ocr.png"

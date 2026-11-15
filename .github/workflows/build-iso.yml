@@ -76,7 +76,7 @@ jobs:
     # Experimental: runs an unattended ReactOS install in QEMU to see how far it gets.
     needs: iso
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
     continue-on-error: true
     env:
       REACTOS_VERSION: ${{ inputs.reactos_version }}
@@ -95,7 +95,7 @@ jobs:
           ./scripts/build-shell.sh
           python3 tools/make_wallpapers.py build/wallpapers
           AVOCADOS_UNATTEND=1 ./scripts/build-iso.sh dist/avocadOS-ci.iso
-      - run: ./scripts/qemu-smoke.sh dist/avocadOS-ci.iso dist/shots-install 25 install
+      - run: ./scripts/qemu-smoke.sh dist/avocadOS-ci.iso dist/shots-install 35 install
       - name: Upload install screenshots
         if: always()
         uses: actions/upload-artifact@v4
