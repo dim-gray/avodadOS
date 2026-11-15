@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>avocadOS Dev Tools</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #1d2a14; color: #eef3e0; margin: 0; padding: 32px; }
+  h1 { color: #b8d96a; margin-top: 0; }
+  table { border-collapse: collapse; width: 100%; max-width: 860px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #3a4d28; vertical-align: top; }
+  th { color: #b8d96a; }
+  a { color: #e3f19a; }
+  .ok { color: #9be564; } .maybe { color: #f0c862; } .no { color: #ef8a7a; }
+  p.note { max-width: 860px; color: #c9d6b0; }
+</style>
+</head>
+<body>
+<h1>avocadOS Dev Tools</h1>
+<p class="note">ReactOS is alpha software and only implements part of Windows. This page lists what to install
+and how likely it is to work. If something fails, that is usually ReactOS, not you.</p>
+<table>
+<tr><th>Tool</th><th>What to get</th><th>On ReactOS</th></tr>
+<tr><td>Python</td><td>Python 3.4.4 is bundled and installed by first-boot. Newer Pythons need Windows Vista or later.</td><td class="maybe">Often works for scripts</td></tr>
+<tr><td>C / C++</td><td><a href="https://sourceforge.net/projects/mingw/">MinGW</a> (32-bit GCC) or the TDM-GCC build of it.</td><td class="maybe">Command-line compiling usually works</td></tr>
+<tr><td>Java</td><td>Java 7 or 8 for 32-bit Windows (for example from <a href="https://adoptium.net/temurin/releases/?version=8&amp;os=windows&amp;arch=x86">Adoptium</a>).</td><td class="maybe">Needs testing</td></tr>
+<tr><td>Rust</td><td><a href="https://rustup.rs/">rustup</a></td><td class="no">Current Rust does not support XP-era Windows, so it will not run</td></tr>
+</table>
+</body>
+</html>

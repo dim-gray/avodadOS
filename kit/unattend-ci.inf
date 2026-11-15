@@ -1,0 +1,22 @@
+; Used ONLY by the CI test ISO (AVOCADOS_UNATTEND=1). It installs ReactOS onto the first
+; disk without asking, which would wipe a real disk, so the downloadable ISO never ships this.
+; Key names follow ReactOS's unattended-setup support; verify against the CI screenshots.
+[Unattend]
+Signature = "$ReactOS$"
+UnattendSetupEnabled = yes
+DestinationDiskNumber = 0
+DestinationPartitionNumber = 1
+InstallationDirectory = ReactOS
+FullName = "avocadOS"
+OrgName = "avocadOS"
+ComputerName = "AVOCADOS"
+AdminPassword = ""
+LocaleID = 409
+MBRInstallType = 1
+FormatPartition = 1
+
+[Display]
+BitsPerPel = 32
+XResolution = 1024
+YResolution = 768
+VRefresh = 60

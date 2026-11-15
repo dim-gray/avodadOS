@@ -1,0 +1,104 @@
+name: build-iso
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      reactos_version:
+        description: ReactOS release folder on SourceForge
+        default: "0.4.15"
+      publish_release:
+        description: Publish the ISO as a GitHub release
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  iso:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      REACTOS_VERSION: ${{ inputs.reactos_version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mingw-w64 xorriso unzip python3 qemu-system-x86 qemu-utils socat imagemagick
+
+      - name: Cache downloads
+        uses: actions/cache@v4
+        with:
+          path: cache
+          key: sources-${{ hashFiles('kit/sources.env', 'scripts/fetch.sh') }}-${{ inputs.reactos_version }}
+
+      - name: Download ReactOS and apps
+        run: ./scripts/fetch.sh
+
+      - name: Build shell and wallpapers
+        run: |
+          ./scripts/build-shell.sh
+          python3 tools/make_wallpapers.py build/wallpapers
+
+      - name: Build the avocadOS ISO
+        run: ./scripts/build-iso.sh dist/avocadOS.iso
+
+      - name: Boot the ISO in QEMU
+        run: ./scripts/qemu-smoke.sh dist/avocadOS.iso dist/shots-boot 3 boot
+
+      - name: Upload the ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: avocadOS-iso
+          path: dist/avocadOS.iso
+          compression-level: 0
+
+      - name: Upload boot screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-boot
+          path: dist/shots-boot/*.png
+
+      - name: Publish release
+        if: ${{ inputs.publish_release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: avocados-${{ github.run_number }}
+          name: avocadOS build ${{ github.run_number }}
+          files: dist/avocadOS.iso
+
+  install-test:
+    # Experimental: runs an unattended ReactOS install in QEMU to see how far it gets.
+    needs: iso
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    continue-on-error: true
+    env:
+      REACTOS_VERSION: ${{ inputs.reactos_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mingw-w64 xorriso unzip python3 qemu-system-x86 qemu-utils socat imagemagick
+      - uses: actions/cache@v4
+        with:
+          path: cache
+          key: sources-${{ hashFiles('kit/sources.env', 'scripts/fetch.sh') }}-${{ inputs.reactos_version }}
+      - run: ./scripts/fetch.sh
+      - run: |
+          ./scripts/build-shell.sh
+          python3 tools/make_wallpapers.py build/wallpapers
+          AVOCADOS_UNATTEND=1 ./scripts/build-iso.sh dist/avocadOS-ci.iso
+      - run: ./scripts/qemu-smoke.sh dist/avocadOS-ci.iso dist/shots-install 25 install
+      - name: Upload install screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-install
+          path: dist/shots-install/*.png
