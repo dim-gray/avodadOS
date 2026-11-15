@@ -25,11 +25,22 @@ find_link() { # index_url regex -> prints the full url of the first matching fil
 
 # --- ReactOS (the install CD, not the live CD) ---
 if ! ls cache/reactos/*.iso >/dev/null 2>&1; then
-    listing="https://sourceforge.net/projects/reactos/files/ReactOS/${REACTOS_VERSION}/"
-    echo "looking for the ReactOS ${REACTOS_VERSION} install ISO at $listing"
-    zipname=$(curl -fsL --retry 3 -A "$UA" "$listing" \
-        | grep -oE 'ReactOS-[A-Za-z0-9._-]*-iso\.zip' | grep -viE 'live|dbg' | head -n1 || true)
+    zipname=""
+    # SourceForge's folder page is the first choice; its RSS feed is the fallback.
+    for listing in \
+        "https://sourceforge.net/projects/reactos/files/ReactOS/${REACTOS_VERSION}/" \
+        "https://sourceforge.net/projects/reactos/rss?path=/ReactOS/${REACTOS_VERSION}"; do
+        echo "looking for the ReactOS ${REACTOS_VERSION} install ISO at $listing"
+        page=$(curl -sSL --retry 3 -A "$UA" -w '\nHTTP %{http_code}\n' "$listing" || true)
+        echo "$page" | tail -n1
+        zipname=$(printf '%s' "$page" | grep -oE 'ReactOS-[A-Za-z0-9._-]*-iso\.zip' \
+            | grep -viE 'live|dbg' | head -n1 || true)
+        [ -n "$zipname" ] && break
+        echo "no iso zip name found; names that look like files on that page:" >&2
+        printf '%s' "$page" | grep -oE '[A-Za-z0-9._-]+\.(zip|7z|iso)' | sort -u | head -n 20 >&2 || true
+    done
     if [ -z "$zipname" ]; then echo "could not find a ReactOS ${REACTOS_VERSION} iso zip" >&2; exit 1; fi
+    echo "using $zipname"
     dl "https://sourceforge.net/projects/reactos/files/ReactOS/${REACTOS_VERSION}/${zipname}/download" "cache/$zipname"
     mkdir -p cache/reactos
     unzip -o -j "cache/$zipname" '*.iso' -d cache/reactos
