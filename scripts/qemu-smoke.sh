@@ -43,6 +43,15 @@ for i in $(seq 1 $((MIN * 2))); do
     shot "$name"
     sd=$(convert "$OUT/$name.png" -format '%[fx:standard_deviation]' info:)
     echo "$name: contrast $sd"
+    # Print what is on screen as text (OCR), but only when the picture changed, so CI logs show progress.
+    sum=$(md5sum < "$OUT/$name.png" | cut -d' ' -f1)
+    if [ "$sum" != "${last_sum:-}" ] && command -v tesseract >/dev/null 2>&1; then
+        echo "--- screen text at $name"
+        convert "$OUT/$name.png" -resize 200% -colorspace Gray "$OUT/ocr.png"
+        tesseract "$OUT/ocr.png" stdout 2>/dev/null | grep -v '^[[:space:]]*$' | head -n 40 || true
+        echo "---"
+    fi
+    last_sum=$sum
     if awk "BEGIN{exit !($sd > 0.02)}"; then alive=1; fi
 done
 
