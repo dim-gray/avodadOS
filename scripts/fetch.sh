@@ -34,14 +34,26 @@ if ! ls cache/reactos/*.iso >/dev/null 2>&1; then
         page=$(curl -sSL --retry 3 -A "$UA" -w '\nHTTP %{http_code}\n' "$listing" || true)
         echo "$page" | tail -n1
         zipname=$(printf '%s' "$page" | grep -oE 'ReactOS-[A-Za-z0-9._-]*-iso\.zip' \
-            | grep -viE 'live|dbg' | head -n1 || true)
+            | grep -viE 'live|dbg|x64|amd64' | head -n1 || true)
         [ -n "$zipname" ] && break
         echo "no iso zip name found; names that look like files on that page:" >&2
         printf '%s' "$page" | grep -oE '[A-Za-z0-9._-]+\.(zip|7z|iso)' | sort -u | head -n 20 >&2 || true
     done
     if [ -z "$zipname" ]; then echo "could not find a ReactOS ${REACTOS_VERSION} iso zip" >&2; exit 1; fi
     echo "using $zipname"
-    dl "https://sourceforge.net/projects/reactos/files/ReactOS/${REACTOS_VERSION}/${zipname}/download" "cache/$zipname"
+    # SourceForge refuses some download URLs, so try the direct mirror link first with a plain curl user agent.
+    got=0
+    for url in \
+        "https://downloads.sourceforge.net/project/reactos/ReactOS/${REACTOS_VERSION}/${zipname}" \
+        "https://sourceforge.net/projects/reactos/files/ReactOS/${REACTOS_VERSION}/${zipname}/download"; do
+        echo "download: $url"
+        if curl -fL --retry 3 --retry-delay 5 -A "curl/8.5.0" -o "cache/$zipname.part" "$url"; then
+            mv "cache/$zipname.part" "cache/$zipname"
+            got=1
+            break
+        fi
+    done
+    [ "$got" = "1" ] || { echo "could not download $zipname from SourceForge" >&2; exit 1; }
     mkdir -p cache/reactos
     unzip -o -j "cache/$zipname" '*.iso' -d cache/reactos
 fi
