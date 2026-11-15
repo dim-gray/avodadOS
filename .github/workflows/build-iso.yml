@@ -47,6 +47,9 @@ jobs:
       - name: Build the avocadOS ISO
         run: ./scripts/build-iso.sh dist/avocadOS.iso
 
+      - name: Inspect the ISO layout
+        run: ./scripts/inspect-iso.sh cache/reactos/*.iso
+
       - name: Boot the ISO in QEMU
         run: ./scripts/qemu-smoke.sh dist/avocadOS.iso dist/shots-boot 3 boot
 
