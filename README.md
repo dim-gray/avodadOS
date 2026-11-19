@@ -1,3 +1,4 @@
+# discontinued for now........
 # avocadOS
 
 A lightweight 32-bit desktop built on [ReactOS](https://reactos.org/). It remasters the ReactOS install disc and adds:
