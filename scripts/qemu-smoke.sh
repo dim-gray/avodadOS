@@ -9,6 +9,8 @@ ISO=$1
 OUT=$2
 MIN=${3:-3}
 MODE=${4:-boot}
+EXPECT=${EXPECT:-}   # optional text that must show up on screen at some point (checked by OCR)
+found=0
 MON=/tmp/avocados-qemu-mon.sock
 
 mkdir -p "$OUT"
@@ -53,12 +55,21 @@ for i in $(seq 1 $((MIN * 2))); do
     if [ "$sum" != "${last_sum:-}" ] && command -v tesseract >/dev/null 2>&1; then
         echo "--- screen text at $name"
         convert "$OUT/$name.png" -resize 200% -colorspace Gray "$OUT/ocr.png"
-        tesseract "$OUT/ocr.png" stdout 2>/dev/null | grep -v '^[[:space:]]*$' | head -n 40 || true
+        tesseract "$OUT/ocr.png" stdout 2>/dev/null | grep -v '^[[:space:]]*$' > "$OUT/ocr.txt" || true
+        head -n 40 "$OUT/ocr.txt"
+        if [ -n "$EXPECT" ] && grep -qi -- "$EXPECT" "$OUT/ocr.txt"; then
+            echo ">>> found '$EXPECT' on screen at $name"
+            found=1
+        fi
         echo "---"
     fi
     last_sum=$sum
     if awk "BEGIN{exit !($sd > 0.02)}"; then alive=1; fi
 done
 
+if [ -n "$EXPECT" ]; then
+    [ "$found" = "1" ] && echo "RESULT: '$EXPECT' appeared on screen" || echo "RESULT: '$EXPECT' never appeared on screen" >&2
+    [ "$found" = "1" ] || exit 2
+fi
 [ "$alive" = "1" ] || { echo "every screenshot was blank: the ISO did not boot" >&2; exit 1; }
 echo "ISO produced a live screen"

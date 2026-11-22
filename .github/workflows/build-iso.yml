@@ -98,7 +98,7 @@ jobs:
           ./scripts/build-shell.sh
           python3 tools/make_wallpapers.py build/wallpapers
           AVOCADOS_UNATTEND=1 ./scripts/build-iso.sh dist/avocadOS-ci.iso
-      - run: ./scripts/qemu-smoke.sh dist/avocadOS-ci.iso dist/shots-install 35 install
+      - run: EXPECT=avocadOS ./scripts/qemu-smoke.sh dist/avocadOS-ci.iso dist/shots-install 20 install
       - name: Upload install screenshots
         if: always()
         uses: actions/upload-artifact@v4
