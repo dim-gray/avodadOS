@@ -25,6 +25,9 @@ if exist "%SRC%apps\python.msi" start /wait msiexec /i "%SRC%apps\python.msi" /q
 echo [avocadOS] setting the avocadOS shell as default...
 reg add "HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" /v Shell /t REG_SZ /d "%DST%\avocado-shell.exe" /f
 
+reg query "HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" /v Shell
+
 echo done> "%DST%\firstboot.done"
-echo [avocadOS] finished. Log off or restart to see the new desktop.
+echo [avocadOS] finished. Restarting in 10 seconds to start the avocadOS desktop...
+shutdown -r -t 10
 endlocal
