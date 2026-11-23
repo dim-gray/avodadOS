@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install tools
-        run: sudo apt-get update && sudo apt-get install -y xorriso unzip
+        run: sudo apt-get update && sudo apt-get install -y xorriso unzip cabextract
       - uses: actions/cache@v4
         with:
           path: cache
