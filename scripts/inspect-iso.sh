@@ -23,21 +23,17 @@ echo "== cab: any 'Program Files' or 'programs' dirs"
 cabextract -l "$tmp/reactos.cab" | grep -i -E 'program|python|firefox|gecko' | head -n 10 || true
 
 echo "== reactos.inf: encoding and size"
-file "$tmp/reactos.inf"; wc -c "$tmp/reactos.inf"
-iconv -f UTF-16 -t UTF-8 "$tmp/reactos.inf" 2>/dev/null > "$tmp/reactos.u8" || cp "$tmp/reactos.inf" "$tmp/reactos.u8"
-echo "== reactos.inf: section headers"
-grep -n '^\[' "$tmp/reactos.u8" | head -n 60
-echo "== reactos.inf: first 60 lines"
-head -n 60 "$tmp/reactos.u8" | tr -d '\r'
-echo "== reactos.inf: Directories section (first 40)"
-awk '/^\[Directories\]/{f=1;next} /^\[/{f=0} f' "$tmp/reactos.u8" | tr -d '\r' | head -n 40
-echo "== reactos.inf: SourceFileNames sample (first 15 and 15 around notepad)"
-awk '/^\[SourceFileNames/{f=1;print;next} /^\[/{f=0} f' "$tmp/reactos.u8" | tr -d '\r' | head -n 15
-grep -n -i 'notepad' "$tmp/reactos.u8" | tr -d '\r' | head -n 8
-echo "== reactos.inf: SourceDisksNames"
-awk '/^\[SourceDisksNames/{f=1;print;next} /^\[/{f=0} f' "$tmp/reactos.u8" | tr -d '\r' | head -n 10
-echo "== reactos.inf: DestinationDirs"
-awk '/^\[DestinationDirs\]/{f=1;print;next} /^\[/{f=0} f' "$tmp/reactos.u8" | tr -d '\r' | head -n 12
-echo "== txtsetup.sif: head and file-related lines"
-head -n 40 "$tmp/txtsetup.sif" | tr -d '\r'
-grep -n -i -E 'cab|reactos.inf|SourceDisksNames' "$tmp/txtsetup.sif" | tr -d '\r' | head -n 12
+file "$tmp/reactos.inf" || true
+head -c 4 "$tmp/reactos.inf" | od -An -tx1 || true
+cp "$tmp/reactos.inf" "$tmp/reactos.u8"
+if [ "$(head -c 2 "$tmp/reactos.inf" | od -An -tx1 | tr -d ' ')" = "fffe" ]; then
+    iconv -f UTF-16 -t UTF-8 "$tmp/reactos.inf" > "$tmp/reactos.u8" || true
+fi
+tr -d '\r' < "$tmp/reactos.u8" > "$tmp/reactos.txt"
+wc -l "$tmp/reactos.txt" || true
+echo "== BEGIN reactos.inf"
+cat "$tmp/reactos.txt" | cut -c1-200
+echo "== END reactos.inf"
+echo "== txtsetup.sif lines mentioning cab or inf"
+tr -d '\r' < "$tmp/txtsetup.sif" | grep -n -i -E 'cab|\.inf|SourceDisks|Files' | cut -c1-200 | head -n 30 || true
+echo "== END"
